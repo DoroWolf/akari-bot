@@ -6,6 +6,7 @@
 </div>
 
 ![GitHub issues](https://img.shields.io/github/issues/Teahouse-Studios/bot) ![GitHub pull requests](https://img.shields.io/github/issues-pr/Teahouse-Studios/bot) ![License](https://img.shields.io/github/license/Teahouse-Studios/bot) ![GitHub tag](https://img.shields.io/github/v/tag/Teahouse-Studios/bot?include_prereleases) [![Crowdin](https://badges.crowdin.net/akari-bot/localized.svg)](https://crowdin.com/project/akari-bot) ![GitHub Repo stars](https://img.shields.io/github/stars/Teahouse-Studios/bot?style=social)
+[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2FDoroWolf%2Fakari-bot.svg?type=shield)](https://app.fossa.com/projects/git%2Bgithub.com%2FDoroWolf%2Fakari-bot?ref=badge_shield)
 
 ## 介绍
 
@@ -78,3 +79,7 @@
 ## 友情链接
 
 * [音卡](https://github.com/codethink-cn/Inkar-Suki) - 各种功能于一体的群聊机器人。
+
+
+## License
+[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2FDoroWolf%2Fakari-bot.svg?type=large)](https://app.fossa.com/projects/git%2Bgithub.com%2FDoroWolf%2Fakari-bot?ref=badge_large)
