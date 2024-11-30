@@ -10,11 +10,7 @@ class Module:
     A module itself is basically who raised the error or returned the result.
     """
 
-    def __init__(self, name, data=None, summaries=None):
-        if data is None:
-            data = {}
-        if summaries is None:
-            summaries = {}
+    def __init__(self, name, data={}, summaries={}):
         self.name = name
         self.data = data
         self.summaries = summaries
