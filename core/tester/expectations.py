@@ -1,0 +1,423 @@
+from __future__ import annotations
+
+import asyncio
+import re
+from typing import Callable
+
+from core.builtins.message.chain import MessageChain
+from core.builtins.session.info import SessionInfo
+from core.builtins.types import MessageElement, MultimodalElement
+
+
+class Expectation:
+    """
+    所有期望匹配器的基类。
+    """
+    async def match(self, result: dict) -> bool | None:
+        raise NotImplementedError
+
+    def __and__(self, other: "Expectation") -> "Expectation":
+        return All(self, other)
+
+    def __or__(self, other: "Expectation") -> "Expectation":
+        return Any(self, other)
+
+    def __invert__(self) -> "Expectation":
+        return Not(self)
+
+
+class All(Expectation):
+    """
+    满足所有期望匹配器。
+
+    :param expects: 期望匹配器
+    """
+    def __init__(self, *expects: Expectation):
+        self.expects = expects
+
+    async def match(self, result):
+        return all([await e.match(result) for e in self.expects])
+
+    def __str__(self):
+        return " AND ".join(str(e) for e in self.expects)
+
+
+class Any(Expectation):
+    """
+    满足任意期望匹配器。
+
+    :param expects: 期望匹配器
+    """
+    def __init__(self, *expects: Expectation):
+        self.expects = expects
+
+    async def match(self, result):
+        return any([await e.match(result) for e in self.expects])
+
+    def __str__(self):
+        return " OR ".join(str(e) for e in self.expects)
+
+
+class Not(Expectation):
+    """
+    不允许满足某一期望匹配器。
+
+    :param expects: 期望匹配器
+    """
+    def __init__(self, expect: Expectation):
+        self.expect = expect
+
+    async def match(self, result):
+        r = await self.expect.match(result)
+        if r is None:
+            return None
+        return not r
+
+    def __str__(self):
+        return f"NOT({self.expect})"
+
+class Empty(Expectation):
+    """
+    是否无输出。
+    """
+    async def match(self, result):
+        return not bool(result.get("output"))
+
+    def __str__(self):
+        return "Empty()"
+
+
+class Equals(Expectation):
+    """
+    是否完全匹配消息链。
+
+    :param msgchain: 期望消息链
+    """
+    def __init__(self, msgchain: str | MessageChain | list[MessageElement] | tuple[MessageElement, ...] | MessageElement):
+        self.expected = msgchain
+
+    async def match(self, result):
+        session_info = await SessionInfo.assign(
+            target_id="TEST|Console|0",
+            client_name="TEST",
+            target_from="TEST",
+            sender_id="TEST|0",
+            sender_from="TEST",
+        )
+
+        expected = MessageChain.assign(self.expected).as_sendable(session_info)
+        actual = MessageChain.assign(result.get("output")).as_sendable(session_info)
+        return expected == actual
+
+    def __str__(self):
+        return f"Equals({MessageChain.assign(self.expected).to_str(text_only=False)!r})"
+
+
+class Match(Expectation):
+    """
+    消息文本是否匹配。
+
+    :param msgchain: 期望消息链
+    """
+    def __init__(self, msgchain: str | MessageChain | list[MessageElement] | tuple[MessageElement, ...] | MessageElement):
+        self.expected = msgchain
+
+    async def match(self, result):
+        expected = MessageChain.assign(self.expected).to_str()
+        actual = MessageChain.assign(result.get("output")).to_str()
+        return expected == actual
+
+    def __str__(self):
+        return f"Match({MessageChain.assign(self.expected).to_str()!r})"
+
+
+class Contains(Expectation):
+    """
+    消息文本中是否包含特定字符串。
+
+    :param text: 期望字符串
+    """
+    def __init__(self, text: str):
+        self.text = text
+
+    async def match(self, result):
+        output = MessageChain.assign(result.get("output")).to_str()
+        return self.text in output
+
+    def __str__(self):
+        return f"Contains({self.text!r})"
+
+
+class StartsWith(Expectation):
+    """
+    消息文本开头是否包含特定字符串。
+
+    :param text: 期望字符串
+    """
+    def __init__(self, text: str):
+        self.text = text
+
+    async def match(self, result):
+        output = MessageChain.assign(result.get("output")).to_str()
+        return output.startswith(self.text)
+
+    def __str__(self):
+        return f"StartsWith({self.text!r})"
+
+
+class EndsWith(Expectation):
+    """
+    消息文本结尾是否包含特定字符串。
+
+    :param text: 期望字符串
+    """
+    def __init__(self, text: str):
+        self.text = text
+
+    async def match(self, result):
+        output = MessageChain.assign(result.get("output")).to_str()
+        return output.endswith(self.text)
+
+    def __str__(self):
+        return f"EndsWith({self.text!r})"
+
+
+class Regex(Expectation):
+    """
+    消息文本中是否满足正则表达式。
+
+    :param pattern: 正则表达式
+    """
+    def __init__(self, pattern: str | re.Pattern):
+        self.pattern = re.compile(pattern) if isinstance(pattern, str) else pattern
+
+    async def match(self, result):
+        output = MessageChain.assign(result.get("output")).to_str()
+        return bool(self.pattern.search(output))
+
+    def __str__(self):
+        return f"Regex({self.pattern.pattern!r})"
+
+
+class Length(Expectation):
+    """
+    消息链长度是否符合预期。
+
+    :param eq: 预期消息链精确长度
+    :param min: 预期消息链最小长度
+    :param max: 预期消息链最大长度
+    """
+    def __init__(self, eq: int | None = None, min: int | None = None, max: int | None = None):
+        self.eq = eq
+        self.min = min
+        self.max = max
+
+    async def match(self, result):
+        output = result.get("output") or []
+
+        if self.eq is not None:
+            return len(output) == self.eq
+        if self.min is not None and len(output) < self.min:
+            return False
+        if self.max is not None and len(output) > self.max:
+            return False
+        return True
+
+    def __str__(self):
+        parts = []
+        if self.eq is not None:
+            parts.append(f"eq={self.eq}")
+        if self.min is not None:
+            parts.append(f"min={self.min}")
+        if self.max is not None:
+            parts.append(f"max={self.max}")
+        return f"Length({', '.join(parts)})"
+
+
+class Exist(Expectation):
+    """
+    消息链中是否含有对应消息元素类型。
+
+    :param element: 消息元素类型
+    :param func: 自定义函数
+    """
+    def __init__(self,
+                 element: type[MultimodalElement],
+                 func: Callable | None = None):
+        self.element = element
+        self.func = func
+
+    async def match(self, result):
+        output = result.get("output") or []
+
+        for e in output:
+            if isinstance(e, self.element):
+                if self.func:
+                    if asyncio.iscoroutinefunction(self.func):
+                        if not await self.func(e):
+                            return False
+                    else:
+                        if not self.func(e):
+                            return False
+                return True
+        return False
+
+    def __str__(self):
+        parts = [f"{self.element.__name__}"]
+        if self.func is not None:
+            parts.append(f"func={self.func.__name__}")
+        return f"HasElement({', '.join(parts)})"
+
+
+class Count(Expectation):
+    """
+    匹配消息链中消息元素的数量。
+
+    :param element: 消息元素类型
+    :param eq: 预期匹配精确数量
+    :param min: 预期匹配最小数量
+    :param max: 预期匹配最大数量
+    """
+    def __init__(self,
+                 element: type[MultimodalElement],
+                 eq: int | None = None,
+                 min: int | None = None,
+                 max: int | None = None):
+        self.element = element
+        self.eq = eq
+        self.min = min
+        self.max = max
+
+    async def match(self, result):
+        output = result.get("output") or []
+        count = 0
+
+        for e in output:
+            if isinstance(e, self.element):
+                count += 1
+
+        if self.eq is not None:
+            return count == self.eq
+        if self.min is not None and count < self.min:
+            return False
+        if self.max is not None and count > self.max:
+            return False
+        return True
+
+    def __str__(self):
+        parts = [f"{self.element.__name__}"]
+        if self.eq is not None:
+            parts.append(f"eq={self.eq}")
+        if self.min is not None:
+            parts.append(f"min={self.min}")
+        if self.max is not None:
+            parts.append(f"max={self.max}")
+        return f"Count({', '.join(parts)})"
+
+
+class InOrder(Expectation):
+    """
+    按顺序匹配消息链中的消息元素。
+
+    :param elements: 消息元素类型，可以是多个类型或包含类型的 list/tuple。
+    """
+
+    def __init__(self, *elements: type[MultimodalElement] | list[type[MultimodalElement]] | tuple[type[MultimodalElement], ...]):
+        if len(elements) == 1 and isinstance(elements[0], (list, tuple)):
+            elements = tuple(elements[0])
+        self.elements = tuple(elements)
+
+    async def match(self, result):
+        last_index = -1
+        output = result.get("output") or []
+
+        for e in self.elements:
+            matched = False
+            for i in range(last_index + 1, len(output)):
+                if isinstance(output[i], e):
+                    last_index = i
+                    matched = True
+                    break
+            if not matched:
+                return False
+        return True
+
+    def __str__(self):
+        return f"InOrder({', '.join(e.__name__ for e in self.elements)})"
+
+
+class Consecutive(Expectation):
+    """
+    严格匹配消息链中的消息元素。
+
+    :param elements: 消息元素类型，可以是多个类型或包含类型的 list/tuple。
+    """
+    def __init__(self, *elements: type[MultimodalElement] | list[type[MultimodalElement]] | tuple[type[MultimodalElement], ...]):
+        if len(elements) == 1 and isinstance(elements[0], (list, tuple)):
+            elements = tuple(elements[0])
+        self.elements = tuple(elements)
+
+
+    async def match(self, result):
+        output = result.get("output") or []
+
+        if len(output) != len(self.elements):
+            return False
+
+        for e, item in zip(self.elements, output):
+            if not isinstance(item, e):
+                return False
+        return True
+
+    def __str__(self):
+        return f"Consecutive({', '.join(e.__name__ for e in self.elements)})"
+
+
+class Raise(Expectation):
+    """
+    检查抛出的异常。
+
+    :param exc: 异常类型或实例
+    :param message_contain: 期望异常消息包含的字符串
+    """
+    def __init__(self, exc: type[Exception], message_contain: str | None = None):
+        self.exc_type: type[Exception] = exc
+        self.message_contain = message_contain
+
+    async def match(self, result):
+        exc_instance = result.get("exception")
+        if not exc_instance:
+            return False
+
+        if not isinstance(exc_instance, self.exc_type):
+            return False
+
+        if self.message_contain is not None:
+            exception_message = result.get("exception_message", "")
+            if self.message_contain not in exception_message:
+                return False
+
+        return True
+
+    def __str__(self):
+        if self.message_contain is not None:
+            return f"Raise({self.exc_type.__name__}, message_contain={self.message_contain!r})"
+        return f"Raise({self.exc_type.__name__})"
+
+
+class Predicate(Expectation):
+    """
+    自定义期望匹配器。
+
+    :param func: 自定义函数
+    """
+    def __init__(self, func: Callable):
+        self.func = func
+
+    async def match(self, result):
+        if asyncio.iscoroutinefunction(self.func):
+            return bool(await self.func(result))
+        return bool(self.func(result))
+
+    def __str__(self):
+        return f"Predicate({self.func.__name__})"

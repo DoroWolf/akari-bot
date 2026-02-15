@@ -6,15 +6,14 @@ import glob
 import importlib.util
 import inspect
 import os
+import shutil
 import sys
 
-from core.builtins.message.chain import MessageChain
-from core.builtins.message.elements import PlainElement
-from core.builtins.session.info import SessionInfo
 from core.builtins.utils import confirm_command
-from core.constants import tests_path
+from core.constants import cache_path, tests_path
 from core.logger import Logger
 from core.tester.decorator import get_registry
+from core.tester.expectations import Expectation
 from core.tester.mock.database import init_db, close_db
 from core.tester.mock.loader import load_modules
 from core.tester.mock.random import Random
@@ -25,6 +24,8 @@ IS_CI = os.environ.get("CI", "0") == "1"
 
 async def main():
     Logger.rename("test", export=False)
+    cache_path.mkdir(parents=True, exist_ok=True)
+
     try:
         if not await init_db():
             Logger.critical("Failed to initialize database. Aborting tests.")
@@ -85,23 +86,27 @@ async def main():
                 failed += 1
                 continue
 
-            output = r.get("output", [])
             action = r.get("action", [])
             fmted_output = "\n".join(action) if action else "[NO OUTPUT]"
-            expected = entry.get("expected")
+            expected = r.get("expected")
             Logger.info(f"INPUT: {inp}")
             if note:
                 Logger.info(f"NOTE: {note}")
             Logger.info(f"OUTPUT:\n{fmted_output}")
 
-            if expected is None:  # noqa
+            if isinstance(expected, Expectation):
+                Logger.info(f"EXPECT: {expected}")
+                match = await expected.match(r)
+                if match:
+                    Logger.success("RESULT: PASS")
+                    passed += 1
+                elif match is False:
+                    Logger.error("RESULT: FAIL")
+                    failed += 1
+            else:
                 if IS_CI:
-                    if not output:
-                        Logger.success("RESULT: PASS (auto CI)")
-                        passed += 1
-                    else:
-                        Logger.error("RESULT: FAIL (auto CI)")
-                        Logger.error("EXPECTED:\n[NO OUTPUT]")
+                    if IS_CI:
+                        Logger.error("RESULT: FAIL (expects manual review, unavailable in CI)")
                         failed += 1
                 else:
                     try:
@@ -117,39 +122,6 @@ async def main():
                         print("")
                         Logger.warning("Interrupted by user.")
                         os._exit(1)
-            elif expected is True:  # noqa
-                if output:
-                    Logger.success("RESULT: PASS")
-                    passed += 1
-                else:
-                    Logger.error("RESULT: FAIL")
-                    failed += 1
-            elif expected is False:  # noqa
-                if not output:
-                    Logger.success("RESULT: PASS")
-                    passed += 1
-                else:
-                    Logger.error("RESULT: FAIL")
-                    Logger.error("EXPECTED:\n[NO OUTPUT]")
-                    failed += 1
-            else:
-                session_info = await SessionInfo.assign(
-                    target_id="TEST|Console|0",
-                    client_name="TEST",
-                    target_from="TEST",
-                    sender_id="TEST|0",
-                    sender_from="TEST"
-                )
-                expected = MessageChain.assign(expected).as_sendable(session_info)
-                excepted_ = "\n".join([x.text if isinstance(x, PlainElement) else str(x) for x in expected])
-
-                if output == expected:
-                    Logger.success("RESULT: PASS")
-                    passed += 1
-                else:
-                    Logger.error("RESULT: FAIL")
-                    Logger.error(f"EXPECTED:\n{excepted_}")
-                    failed += 1
             tcost = r.get("time_cost")
             if tcost is not None:
                 Logger.info(f"TIME COST: {tcost:.06f}s")
@@ -214,6 +186,9 @@ async def main():
                     if note:
                         Logger.info(f"NOTE: {note}")
                     Logger.info(f"OUTPUT:\n{fmted_output}")
+
+                    if expected is not None:
+                        Logger.info(f"EXPECT: {expected}")
 
                     if match:
                         continue

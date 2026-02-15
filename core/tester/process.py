@@ -4,14 +4,7 @@ from typing import Any
 
 from core.builtins.message.chain import MessageChain, match_kecode
 from core.builtins.message.elements import PlainElement
-from core.builtins.session.info import SessionInfo
-from core.builtins.types import MessageElement
-from core.constants.exceptions import (
-    AbuseWarning,
-    NoReportException,
-    SessionFinished,
-    TestException,
-)
+from core.constants.exceptions import SessionFinished
 from core.cooldown import _cd_dict
 from core.database.models import SenderInfo, TargetInfo
 from core.game import _ps_dict
@@ -39,7 +32,7 @@ async def run_case_entry(entry: dict, is_ci: bool = False) -> list[dict]:
         Logger.exception("Failed to load modules for tests:")
 
     start = time.perf_counter()
-    result = await run_single_test(entry["input"], casetest_target=entry.get("func"), is_ci=is_ci)
+    result = await run_single_test(entry["input"], expected=entry.get("expected"), casetest_target=entry.get("func"), is_ci=is_ci)
     elapsed = time.perf_counter() - start
     try:
         result["time_cost"] = elapsed
@@ -86,6 +79,7 @@ async def run_function_test(fn, is_ci: bool = False) -> dict[str, Any]:
 async def run_single_test(
     input_: str | list[str] | tuple[str, ...],
     *,
+    expected=None,
     casetest_target=None,
     is_ci=False
 ):
@@ -105,12 +99,12 @@ async def run_single_test(
         await parser(msg)
     except SessionFinished:
         pass
-    except (AbuseWarning, NoReportException, TestException) as e:
+    except Exception as e:
         err_msg = msg.session_info.locale.t_str(str(e))
         try:
             err_chain = match_kecode(err_msg, disable_joke=True)
         except Exception:
-            err_chain = MessageChain(err_msg)
+            err_chain = MessageChain.assign(err_msg)
 
         err_action = [
             x.text if isinstance(x, PlainElement) else str(x)
@@ -119,14 +113,11 @@ async def run_single_test(
 
         return {
             "input": input_,
-            "output": err_chain,
+            "exception": e,
+            "exception_message": err_chain.to_str(),
             "action": [f"(raise {type(e).__name__})"] + err_action,
-            "exception": type(e).__name__,
-        }
-    except Exception:
-        return {
-            "input": input_,
             "error": traceback.format_exc(),
+            "expected": expected,
         }
     finally:
         _cd_dict.clear()
@@ -136,27 +127,5 @@ async def run_single_test(
         "input": input_,
         "output": msg.sent,
         "action": msg.action,
+        "expected": expected,
     }
-
-
-async def match_expected(
-    output,
-    expected: bool | str | MessageChain | list[MessageElement] | tuple[MessageElement, ...] | MessageElement | None
-) -> bool | None:
-    if expected is None:  # noqa
-        return None
-    if expected is True:  # noqa
-        return bool(output)
-    if expected is False:  # noqa
-        return not bool(output)
-
-    session_info = await SessionInfo.assign(
-        target_id="TEST|Console|0",
-        client_name="TEST",
-        target_from="TEST",
-        sender_id="TEST|0",
-        sender_from="TEST",
-    )
-
-    expected_chain = MessageChain.assign(expected).as_sendable(session_info)
-    return output == expected_chain
