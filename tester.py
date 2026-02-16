@@ -54,7 +54,7 @@ async def main():
         print("-" * 60)
         fn = entry["func"]
         note = entry.get("note") or (fn.__doc__ if fn.__doc__ else None)
-        file_loc = f"{entry.get('file')}:{entry.get('line')}"
+        file_loc = f"{entry.get("file")}:{entry.get("line")}"
         Logger.info(f"TEST{i}: {fn.__name__} ({file_loc})")
         if fn.__doc__:
             Logger.info(f"DOC: {fn.__doc__}")

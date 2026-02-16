@@ -13,7 +13,7 @@ class Expectation:
     """
     所有期望匹配器的基类。
     """
-    async def match(self, result: dict) -> bool | None:
+    async def match(self, result: dict) -> bool:
         raise NotImplementedError
 
     def __and__(self, other: "Expectation") -> "Expectation":
@@ -36,10 +36,13 @@ class All(Expectation):
         self.expects = expects
 
     async def match(self, result):
-        return all([await e.match(result) for e in self.expects])
+        for e in self.expects:
+            if not await e.match(result):
+                return False
+        return True
 
     def __str__(self):
-        return " AND ".join(str(e) for e in self.expects)
+        return f"({" AND ".join(str(e) for e in self.expects)})"
 
 
 class Any(Expectation):
@@ -52,10 +55,13 @@ class Any(Expectation):
         self.expects = expects
 
     async def match(self, result):
-        return any([await e.match(result) for e in self.expects])
+        for e in self.expects:
+            if await e.match(result):
+                return True
+        return False
 
     def __str__(self):
-        return " OR ".join(str(e) for e in self.expects)
+        return f"({" OR ".join(str(e) for e in self.expects)})"
 
 
 class Not(Expectation):
@@ -69,12 +75,10 @@ class Not(Expectation):
 
     async def match(self, result):
         r = await self.expect.match(result)
-        if r is None:
-            return None
         return not r
 
     def __str__(self):
-        return f"NOT({self.expect})"
+        return f"NOT {self.expect}"
 
 class Empty(Expectation):
     """
@@ -231,7 +235,7 @@ class Length(Expectation):
             parts.append(f"min={self.min}")
         if self.max is not None:
             parts.append(f"max={self.max}")
-        return f"Length({', '.join(parts)})"
+        return f"Length({", ".join(parts)})"
 
 
 class Exist(Expectation):
@@ -266,7 +270,7 @@ class Exist(Expectation):
         parts = [f"{self.element.__name__}"]
         if self.func is not None:
             parts.append(f"func={self.func.__name__}")
-        return f"HasElement({', '.join(parts)})"
+        return f"Exist({", ".join(parts)})"
 
 
 class Count(Expectation):
@@ -312,7 +316,7 @@ class Count(Expectation):
             parts.append(f"min={self.min}")
         if self.max is not None:
             parts.append(f"max={self.max}")
-        return f"Count({', '.join(parts)})"
+        return f"Count({", ".join(parts)})"
 
 
 class InOrder(Expectation):
@@ -343,7 +347,7 @@ class InOrder(Expectation):
         return True
 
     def __str__(self):
-        return f"InOrder({', '.join(e.__name__ for e in self.elements)})"
+        return f"InOrder({", ".join(e.__name__ for e in self.elements)})"
 
 
 class Consecutive(Expectation):
@@ -370,14 +374,14 @@ class Consecutive(Expectation):
         return True
 
     def __str__(self):
-        return f"Consecutive({', '.join(e.__name__ for e in self.elements)})"
+        return f"Consecutive({", ".join(e.__name__ for e in self.elements)})"
 
 
 class Raise(Expectation):
     """
     检查抛出的异常。
 
-    :param exc: 异常类型或实例
+    :param exc: 异常类型
     :param message_contain: 期望异常消息包含的字符串
     """
     def __init__(self, exc: type[Exception], message_contain: str | None = None):
