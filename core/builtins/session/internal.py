@@ -358,7 +358,6 @@ class MessageSession:
         :param delete: 是否在触发后删除消息。（默认为False）
         :param timeout: 超时时间。（默认为120）
         :param append_instruction: 是否在发送的消息中附加提示。
-        :param add_confirm_reaction: 是否在发送的消息上添加确认反应。
         :return: 下一条消息的MessageChain对象。
         """
         send = None

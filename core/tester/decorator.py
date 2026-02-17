@@ -22,7 +22,7 @@ def case(input_: str | list[str] | tuple[str, ...],
     async def _(msg: Bot.MessageSession, word: str):
         await msg.finish(f"{word} is {msg.parsed_msg["<word>"]}")
     ```
-    :param input: 预期输入。
+    :param input_: 预期输入。
     :param expected: 预期输出，传入期望匹配器，若为 None 则手动复核。
     :param note: 额外说明。
     """

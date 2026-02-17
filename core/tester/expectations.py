@@ -68,7 +68,7 @@ class Not(Expectation):
     """
     不允许满足某一期望匹配器。
 
-    :param expects: 期望匹配器
+    :param expect: 期望匹配器
     """
     def __init__(self, expect: Expectation):
         self.expect = expect
