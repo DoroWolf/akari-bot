@@ -664,7 +664,7 @@ async def query_pages(
         async def wait_confirm():
             if wait_msg_list and session.session_info.support_wait:
                 confirm = await session.wait_next_message(
-                    wait_msg_list, delete=True, append_instruction=False, add_confirm_reaction=True
+                    wait_msg_list, delete=True, append_instruction=False
                 )
                 auto_index = False
                 index = 0
