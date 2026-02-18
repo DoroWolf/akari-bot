@@ -95,10 +95,9 @@ async def _():
                                 ]
                             ),
                         )
-                    else:
-                        startup_mute = False
                     alist.append(title)
                     await update_stored_list(Bot.Info.client_name, "mcnews", alist)
+        startup_mute = False
     except Exception:
         Logger.exception()
 
