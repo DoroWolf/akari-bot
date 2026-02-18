@@ -39,6 +39,7 @@ dependencies = [
     "pyjwt[crypto]>=2.8.0,<3.0.0",
     "qq-botpy>=1.2.1,<2.0.0",
     "slowapi>=0.1.9,<1.0.0",
+    "urllib3>=2.6.3",
     "uvicorn[standard]>=0.38.0,<1.0.0",
     # core
     "cattrs>=25.0.0,<26.0.0",
@@ -84,7 +85,6 @@ dependencies = [
     "simpleeval>=1.0.0,<2.0.0",
     "webcolors>=25.0.0,<26.0.0",
     "wolframalpha>=5.0.0,<6.0.0",
-    "urllib3>=2.6.3",
 ]
 
 [project.urls]
