@@ -6,7 +6,6 @@ import glob
 import importlib.util
 import inspect
 import os
-import shutil
 import sys
 
 from core.builtins.utils import confirm_command
@@ -17,7 +16,7 @@ from core.tester.expectations import Expectation
 from core.tester.mock.database import init_db, close_db
 from core.tester.mock.loader import load_modules
 from core.tester.mock.random import Random
-from core.tester.process import run_case_entry, run_function_test
+from core.tester.process import run_case_entry, run_function_entry
 
 IS_CI = os.environ.get("CI", "0") == "1"
 
@@ -77,12 +76,13 @@ async def main():
         for r in results:
             total += 1
             inp = r.get("input")
-            if "error" in r:
+
+            if "traceback" in r:
                 Logger.error(f"INPUT: {inp}")
                 if note:
                     Logger.error(f"NOTE: {note}")
                 Logger.error("ERROR during execution:")
-                Logger.error(r.get("error"))
+                Logger.error(r.get("traceback"))
                 failed += 1
                 continue
 
@@ -149,7 +149,7 @@ async def main():
                 if fn.__doc__:
                     Logger.info(f"DOC: {fn.__doc__}")
 
-                res = await run_function_test(fn, IS_CI)
+                res = await run_function_entry(fn, IS_CI)
                 if res.get("skipped"):
                     continue
                 if res.get("error"):
@@ -168,16 +168,16 @@ async def main():
                 for r in results:
                     note = r.get("note")
                     inp = r.get("input")
-                    if "error" in r:
+
+                    if "traceback" in r:
                         Logger.error(f"INPUT: {inp}")
                         if note:
                             Logger.error(f"NOTE: {note}")
                         Logger.error("ERROR during execution:")
-                        Logger.error(r.get("error"))
+                        Logger.error(r.get("traceback"))
                         func_pass = False
                         break
 
-                    match = r.get("match")
                     expected = r.get("expected")
                     action = r.get("action", [])
                     fmted_output = "\n".join(action) if action else "[NO OUTPUT]"
@@ -190,13 +190,15 @@ async def main():
                     if expected is not None:
                         Logger.info(f"EXPECT: {expected}")
 
-                    if match:
+                    if r.get("match"):
+                        Logger.success("RESULT: PASS")
                         continue
                     if expected is None:
                         try:
                             Logger.warning("REVIEW: Did the output meet expectations? [y/N]")
                             check = input()
                             if check in confirm_command:
+                                Logger.success("RESULT: PASS")
                                 continue
                             func_pass = False
                         except (EOFError, KeyboardInterrupt):

@@ -148,13 +148,13 @@ class MessageSession:
             self,
             text_only: bool = False,
             element_filter: tuple[MessageElement, ...] = None,
-            connector: str = " ") -> str:
+            connector: str = "\n") -> str:
         """
         用于将消息转换为一般文本格式。
 
-        :param text_only: 是否只保留纯文本。（默认为False）
-        :param element_filter: 元素过滤器，用于过滤消息链中的元素。（默认为None）
-        :param connector: 元素连接符，用于连接消息链中的各个元素。（默认为" "）
+        :param text_only: 是否只保留纯文本。（默认为 False）
+        :param element_filter: 元素过滤器，用于过滤消息链中的元素。（默认为 None）
+        :param connector: 元素之间的连接符。（默认为换行）
         :return: 转换后的字符串。
         """
         return self.session_info.messages.to_str(text_only, element_filter=element_filter, connector=connector)

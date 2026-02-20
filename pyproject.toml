@@ -85,6 +85,7 @@ dependencies = [
     "simpleeval>=1.0.0,<2.0.0",
     "webcolors>=25.0.0,<26.0.0",
     "wolframalpha>=5.0.0,<6.0.0",
+    # uncategorized
 ]
 
 [project.urls]

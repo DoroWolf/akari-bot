@@ -91,14 +91,15 @@ class Empty(Expectation):
         return "Empty()"
 
 
-class Equals(Expectation):
+class Equal(Expectation):
     """
     是否完全匹配消息链。
 
-    :param msgchain: 期望消息链
+    :param msg_chain: 期望消息链
     """
-    def __init__(self, msgchain: str | MessageChain | list[MessageElement] | tuple[MessageElement, ...] | MessageElement):
-        self.expected = msgchain
+    def __init__(self,
+                 msg_chain: str | MessageChain | list[MessageElement] | tuple[MessageElement, ...] | MessageElement):
+        self.expected = msg_chain
 
     async def match(self, result):
         session_info = await SessionInfo.assign(
@@ -114,25 +115,32 @@ class Equals(Expectation):
         return expected == actual
 
     def __str__(self):
-        return f"Equals({MessageChain.assign(self.expected).to_str(text_only=False)!r})"
+        return f"Equal({MessageChain.assign(self.expected).to_str(text_only=False, connector=" ")!r})"
 
 
 class Match(Expectation):
     """
     消息文本是否匹配。
 
-    :param msgchain: 期望消息链
+    :param msg_chain: 期望消息链
+    :param case_sensitive: 是否大小写敏感，默认 False
     """
-    def __init__(self, msgchain: str | MessageChain | list[MessageElement] | tuple[MessageElement, ...] | MessageElement):
-        self.expected = msgchain
+    def __init__(self,
+                 msg_chain: str | MessageChain | list[MessageElement] | tuple[MessageElement, ...] | MessageElement,
+                 case_sensitive: bool = False):
+        self.expected = msg_chain
+        self.case_sensitive = case_sensitive
 
     async def match(self, result):
         expected = MessageChain.assign(self.expected).to_str()
         actual = MessageChain.assign(result.get("output")).to_str()
+        if not self.case_sensitive:
+            expected = expected.lower()
+            actual = actual.lower()
         return expected == actual
 
     def __str__(self):
-        return f"Match({MessageChain.assign(self.expected).to_str()!r})"
+        return f"Match({MessageChain.assign(self.expected).to_str(connector=" ")!r}, case_sensitive={self.case_sensitive})"
 
 
 class Contains(Expectation):
@@ -140,16 +148,23 @@ class Contains(Expectation):
     消息文本中是否包含特定字符串。
 
     :param text: 期望字符串
+    :param case_sensitive: 是否大小写敏感，默认 False
     """
-    def __init__(self, text: str):
+    def __init__(self, text: str, case_sensitive: bool = False):
         self.text = text
+        self.case_sensitive = case_sensitive
 
     async def match(self, result):
+        text = self.text
         output = MessageChain.assign(result.get("output")).to_str()
-        return self.text in output
+        
+        if not self.case_sensitive:
+            text = text.lower()
+            output = output.lower()
+        return text in output
 
     def __str__(self):
-        return f"Contains({self.text!r})"
+        return f"Contains({self.text!r}, case_sensitive={self.case_sensitive})"
 
 
 class StartsWith(Expectation):
@@ -157,16 +172,22 @@ class StartsWith(Expectation):
     消息文本开头是否包含特定字符串。
 
     :param text: 期望字符串
+    :param case_sensitive: 是否大小写敏感，默认 False
     """
-    def __init__(self, text: str):
+    def __init__(self, text: str, case_sensitive: bool = False):
         self.text = text
+        self.case_sensitive = case_sensitive
 
     async def match(self, result):
+        text = self.text
         output = MessageChain.assign(result.get("output")).to_str()
-        return output.startswith(self.text)
+        if not self.case_sensitive:
+            text = text.lower()
+            output = output.lower()
+        return output.startswith(text)
 
     def __str__(self):
-        return f"StartsWith({self.text!r})"
+        return f"StartsWith({self.text!r}, case_sensitive={self.case_sensitive})"
 
 
 class EndsWith(Expectation):
@@ -174,16 +195,22 @@ class EndsWith(Expectation):
     消息文本结尾是否包含特定字符串。
 
     :param text: 期望字符串
+    :param case_sensitive: 是否大小写敏感，默认 False
     """
-    def __init__(self, text: str):
+    def __init__(self, text: str, case_sensitive: bool = False):
         self.text = text
+        self.case_sensitive = case_sensitive
 
     async def match(self, result):
+        text = self.text
         output = MessageChain.assign(result.get("output")).to_str()
-        return output.endswith(self.text)
+        if not self.case_sensitive:
+            text = text.lower()
+            output = output.lower()
+        return output.endswith(text)
 
     def __str__(self):
-        return f"EndsWith({self.text!r})"
+        return f"EndsWith({self.text!r}, case_sensitive={self.case_sensitive})"
 
 
 class Regex(Expectation):
@@ -191,9 +218,10 @@ class Regex(Expectation):
     消息文本中是否满足正则表达式。
 
     :param pattern: 正则表达式
+    :param flags: 匹配方式
     """
-    def __init__(self, pattern: str | re.Pattern):
-        self.pattern = re.compile(pattern) if isinstance(pattern, str) else pattern
+    def __init__(self, pattern: str | re.Pattern, flags: re.RegexFlag = 0):
+        self.pattern = re.compile(pattern, flags) if isinstance(pattern, str) else pattern
 
     async def match(self, result):
         output = MessageChain.assign(result.get("output")).to_str()
@@ -208,22 +236,25 @@ class Length(Expectation):
     消息链长度是否符合预期。
 
     :param eq: 预期消息链精确长度
-    :param min: 预期消息链最小长度
-    :param max: 预期消息链最大长度
+    :param ge: 预期消息链最小长度
+    :param le: 预期消息链最大长度
     """
-    def __init__(self, eq: int | None = None, min: int | None = None, max: int | None = None):
+    def __init__(self,
+                 eq: int | None = None,
+                 ge: int | None = None,
+                 le: int | None = None):
         self.eq = eq
-        self.min = min
-        self.max = max
+        self.ge = ge
+        self.le = le
 
     async def match(self, result):
         output = result.get("output") or []
 
-        if self.eq is not None:
-            return len(output) == self.eq
-        if self.min is not None and len(output) < self.min:
+        if self.eq is not None and len(output) != self.eq:
             return False
-        if self.max is not None and len(output) > self.max:
+        if self.ge is not None and len(output) < self.ge:
+            return False
+        if self.le is not None and len(output) > self.le:
             return False
         return True
 
@@ -231,10 +262,10 @@ class Length(Expectation):
         parts = []
         if self.eq is not None:
             parts.append(f"eq={self.eq}")
-        if self.min is not None:
-            parts.append(f"min={self.min}")
-        if self.max is not None:
-            parts.append(f"max={self.max}")
+        if self.ge is not None:
+            parts.append(f"ge={self.ge}")
+        if self.le is not None:
+            parts.append(f"le={self.le}")
         return f"Length({", ".join(parts)})"
 
 
@@ -279,18 +310,18 @@ class Count(Expectation):
 
     :param element: 消息元素类型
     :param eq: 预期匹配精确数量
-    :param min: 预期匹配最小数量
-    :param max: 预期匹配最大数量
+    :param ge: 预期匹配最小数量
+    :param le: 预期匹配最大数量
     """
     def __init__(self,
                  element: type[MultimodalElement],
                  eq: int | None = None,
-                 min: int | None = None,
-                 max: int | None = None):
+                 ge: int | None = None,
+                 le: int | None = None):
         self.element = element
         self.eq = eq
-        self.min = min
-        self.max = max
+        self.ge = ge
+        self.le = le
 
     async def match(self, result):
         output = result.get("output") or []
@@ -300,11 +331,11 @@ class Count(Expectation):
             if isinstance(e, self.element):
                 count += 1
 
-        if self.eq is not None:
-            return count == self.eq
-        if self.min is not None and count < self.min:
+        if self.eq is not None and count != self.eq:
             return False
-        if self.max is not None and count > self.max:
+        if self.ge is not None and count < self.ge:
+            return False
+        if self.le is not None and count > self.le:
             return False
         return True
 
@@ -312,10 +343,10 @@ class Count(Expectation):
         parts = [f"{self.element.__name__}"]
         if self.eq is not None:
             parts.append(f"eq={self.eq}")
-        if self.min is not None:
-            parts.append(f"min={self.min}")
-        if self.max is not None:
-            parts.append(f"max={self.max}")
+        if self.ge is not None:
+            parts.append(f"ge={self.ge}")
+        if self.le is not None:
+            parts.append(f"le={self.le}")
         return f"Count({", ".join(parts)})"
 
 
@@ -324,33 +355,56 @@ class InOrder(Expectation):
     按顺序匹配消息链中的消息元素。
 
     :param elements: 消息元素类型，可以是多个类型或包含类型的 list/tuple。
+    :param consecutive: 是否严格匹配，不允许插入干扰元素。（默认 False）
     """
 
-    def __init__(self, *elements: type[MultimodalElement] | list[type[MultimodalElement]] | tuple[type[MultimodalElement], ...]):
+    def __init__(self,
+                 *elements: type[MultimodalElement] | list[type[MultimodalElement]] | tuple[type[MultimodalElement], ...],
+                 consecutive: bool = False):
         if len(elements) == 1 and isinstance(elements[0], (list, tuple)):
             elements = tuple(elements[0])
         self.elements = tuple(elements)
+        self.consecutive = consecutive
 
     async def match(self, result):
-        last_index = -1
         output = result.get("output") or []
 
-        for e in self.elements:
-            matched = False
-            for i in range(last_index + 1, len(output)):
-                if isinstance(output[i], e):
-                    last_index = i
-                    matched = True
+        if not self.consecutive:
+            last_index = -1
+            for e in self.elements:
+                matched = False
+                for i in range(last_index + 1, len(output)):
+                    if isinstance(output[i], e):
+                        last_index = i
+                        matched = True
+                        break
+                if not matched:
+                    return False
+            return True
+
+        n = len(self.elements)
+        m = len(output)
+
+        if n == 0:
+            return True
+        if n > m:
+            return False
+
+        for start in range(m - n + 1):
+            all_match = True
+            for offset, e in enumerate(self.elements):
+                if not isinstance(output[start + offset], e):
+                    all_match = False
                     break
-            if not matched:
-                return False
-        return True
+            if all_match:
+                return True
+        return False
 
     def __str__(self):
-        return f"InOrder({", ".join(e.__name__ for e in self.elements)})"
+        return f"InOrder([{", ".join(e.__name__ for e in self.elements)}], consecutive={self.consecutive})"
 
 
-class Consecutive(Expectation):
+class StructureEqual(Expectation):
     """
     严格匹配消息链中的消息元素。
 
@@ -374,7 +428,7 @@ class Consecutive(Expectation):
         return True
 
     def __str__(self):
-        return f"Consecutive({", ".join(e.__name__ for e in self.elements)})"
+        return f"StructureEqual([{", ".join(e.__name__ for e in self.elements)}])"
 
 
 class Raise(Expectation):
@@ -383,10 +437,15 @@ class Raise(Expectation):
 
     :param exc: 异常类型
     :param message_contain: 期望异常消息包含的字符串
+    :param case_sensitive: 是否大小写敏感，默认 False
     """
-    def __init__(self, exc: type[Exception], message_contain: str | None = None):
+    def __init__(self,
+                 exc: type[Exception],
+                 message_contain: str | None = None,
+                 case_sensitive: bool = False):
         self.exc_type: type[Exception] = exc
         self.message_contain = message_contain
+        self.case_sensitive = case_sensitive
 
     async def match(self, result):
         exc_instance = result.get("exception")
@@ -397,15 +456,19 @@ class Raise(Expectation):
             return False
 
         if self.message_contain is not None:
+            message_contain = self.message_contain
             exception_message = result.get("exception_message", "")
-            if self.message_contain not in exception_message:
+            if not self.case_sensitive:
+                message_contain = message_contain.lower()
+                exception_message = exception_message.lower()
+            if message_contain not in exception_message:
                 return False
 
         return True
 
     def __str__(self):
         if self.message_contain is not None:
-            return f"Raise({self.exc_type.__name__}, message_contain={self.message_contain!r})"
+            return f"Raise({self.exc_type.__name__}, message_contain={self.message_contain!r}, case_sensitive={self.case_sensitive})"
         return f"Raise({self.exc_type.__name__})"
 
 

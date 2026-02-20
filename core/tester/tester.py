@@ -1,7 +1,7 @@
 import inspect
 
 from .expectations import Expectation
-from .process import run_single_test
+from .process import run_test_case
 
 
 class Tester:
@@ -34,23 +34,20 @@ class Tester:
         }
         self._entries.append(entry_meta)
 
-        result = await run_single_test(input_, expected=expected, is_ci=self.is_ci)
+        result = await run_test_case(input_, expected=expected, is_ci=self.is_ci)
 
         output = result.get("output")
         action = result.get("action")
-        has_error = "error" in result or "exception" in result
 
-        if has_error and not isinstance(expected, Expectation):
+        if "exception" in result and not isinstance(expected, Expectation):
             result.update({"expected": expected, "match": False, "note": note})
             self._results.append(result)
             return result
 
-        if expected is None:
+        if not expected:
             match = None
         elif isinstance(expected, Expectation):
             match = await expected.match(result)
-        else:
-            match = None
 
         final = {
             "input": input_,

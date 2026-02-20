@@ -213,13 +213,13 @@ class MessageChain:
 
         return value
 
-    def to_str(self, text_only=True, element_filter: tuple[MessageElement, ...] | None = None, connector: str = " ") -> str:
+    def to_str(self, text_only=True, element_filter: tuple[MessageElement, ...] | None = None, connector: str = "\n") -> str:
         """
         将消息链转换为字符串。
 
-        :param text_only: 是否仅转换文本元素为字符串，默认为True。
+        :param text_only: 是否仅转换文本元素为字符串，默认为 True。
         :param element_filter: 可选的元素过滤器，指定哪些元素类型需要被转换为字符串。
-        :param connector: 元素之间的连接符，默认为空格。
+        :param connector: 元素之间的连接符，默认为换行。
         """
         result = []
         for x in self.values:

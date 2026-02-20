@@ -1,6 +1,6 @@
 import time
 import traceback
-from typing import Any
+from typing import Any, Callable
 
 from core.builtins.message.chain import MessageChain, match_kecode
 from core.builtins.message.elements import PlainElement
@@ -14,7 +14,7 @@ from core.tester.mock.database import init_db, close_db
 from core.tester.mock.loader import load_modules
 from core.tester.mock.random import Random
 from core.logger import Logger
-
+from .expectations import Expectation
 
 async def run_case_entry(entry: dict, is_ci: bool = False) -> list[dict]:
     try:
@@ -23,7 +23,7 @@ async def run_case_entry(entry: dict, is_ci: bool = False) -> list[dict]:
         Logger.exception("Error closing database before test")
 
     if not await init_db():
-        Logger.critical(f"Failed to reinitialize database for case {entry.get('func')}. Skipping tests.")
+        Logger.critical(f"Failed to reinitialize database for case {entry.get("func")}. Skipping tests.")
         return []
 
     try:
@@ -32,7 +32,10 @@ async def run_case_entry(entry: dict, is_ci: bool = False) -> list[dict]:
         Logger.exception("Failed to load modules for tests:")
 
     start = time.perf_counter()
-    result = await run_single_test(entry["input"], expected=entry.get("expected"), casetest_target=entry.get("func"), is_ci=is_ci)
+    result = await run_test_case(entry["input"],
+                                 expected=entry["expected"],
+                                 casetest_target=entry["func"],
+                                 is_ci=is_ci)
     elapsed = time.perf_counter() - start
     try:
         result["time_cost"] = elapsed
@@ -41,7 +44,7 @@ async def run_case_entry(entry: dict, is_ci: bool = False) -> list[dict]:
     return [result]
 
 
-async def run_function_test(fn, is_ci: bool = False) -> dict[str, Any]:
+async def run_function_entry(fn: Callable, is_ci: bool = False) -> dict[str, Any]:
     try:
         await close_db()
     except Exception:
@@ -76,12 +79,11 @@ async def run_function_test(fn, is_ci: bool = False) -> dict[str, Any]:
     return {"tester": tester, "entries": entries, "results": results, "time_cost": elapsed}
 
 
-async def run_single_test(
+async def run_test_case(
     input_: str | list[str] | tuple[str, ...],
-    *,
-    expected=None,
-    casetest_target=None,
-    is_ci=False
+    expected: Expectation | None = None,
+    casetest_target: Callable | None = None,
+    is_ci: bool = False
 ):
     try:
         await TargetInfo.update_or_create(defaults={}, target_id="TEST|Console|0")
@@ -116,7 +118,7 @@ async def run_single_test(
             "exception": e,
             "exception_message": err_chain.to_str(),
             "action": [f"(raise {type(e).__name__})"] + err_action,
-            "error": traceback.format_exc(),
+            "traceback": traceback.format_exc(),
             "expected": expected,
         }
     finally:
