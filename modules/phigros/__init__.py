@@ -37,9 +37,7 @@ async def _(msg: Bot.MessageSession, sessiontoken: str):
         "Telegram|Supergroup",
     ]:
         await msg.send_message(I18NContext("phigros.message.bind.warning"), quote=False)
-        deleted = await msg.delete()
-        if not deleted:
-            await msg.send_message(I18NContext("phigros.message.bind.delete_failed"), quote=False)
+        await msg.delete()
     headers = p_headers.copy()
     headers["X-LC-Session"] = sessiontoken
     try:
