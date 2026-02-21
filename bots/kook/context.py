@@ -50,17 +50,16 @@ class KOOKContextManager(ContextManager):
 
     @classmethod
     async def check_native_permission(cls, session_info: SessionInfo) -> bool:
+        if session_info.target_from == target_person_prefix:
+            return True
         if session_info.session_id not in cls.context:
             channel = await bot.client.fetch_public_channel(session_info.get_common_target_id())
             author = session_info.get_common_sender_id()
         else:
             ctx: Message = cls.context.get(session_info.session_id)
-            channel = await bot.client.fetch_public_channel(
-                ctx.ctx.channel.id
-            )
+            Logger.warning(str(ctx.ctx.channel.id))
+            channel = await bot.client.fetch_public_channel(ctx.ctx.channel.id)
             author = ctx.author.id
-        if channel.name == "PERSON":
-            return True
         guild = await bot.client.fetch_guild(channel.guild_id)
         user_roles = (await guild.fetch_user(author)).roles
         guild_roles = await guild.fetch_roles()
@@ -165,7 +164,7 @@ class KOOKContextManager(ContextManager):
             return
         for id_ in message_id:
             try:
-                if _channel.type.name == "PERSON":
+                if session_info.target_from == target_person_prefix:
                     await call_api("direct-message/delete", msg_id=id_)
                 else:
                     await call_api("message/delete", msg_id=id_)
@@ -189,7 +188,7 @@ class KOOKContextManager(ContextManager):
             return
 
         try:
-            if _channel.type.name == "PERSON":
+            if session_info.target_from == target_person_prefix:
                 await call_api("direct-message/add-reaction", msg_id=message_id[-1], emoji=emoji)
             else:
                 await call_api("message/add-reaction", msg_id=message_id[-1], emoji=emoji)
@@ -214,7 +213,7 @@ class KOOKContextManager(ContextManager):
             return
 
         try:
-            if _channel.type.name == "PERSON":
+            if session_info.target_from == target_person_prefix:
                 await call_api("direct-message/delete-reaction", msg_id=message_id[-1], emoji=emoji)
             else:
                 await call_api("message/delete-reaction", msg_id=message_id[-1], emoji=emoji)
