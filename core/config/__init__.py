@@ -37,7 +37,7 @@ class CFGManager:
             count += 1
             sleep(1)
             if count > 5:
-                ConfigOperationError("Operation timeout.")
+                raise ConfigOperationError("Operation timeout.")
 
     @classmethod
     def load(cls):  # Load the config file
