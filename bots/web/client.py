@@ -11,10 +11,11 @@ from slowapi.util import get_remote_address
 
 from bots.web.info import *
 from core.client.init import client_init
-from core.config import Config
+from core.config import Config, CFGManager
 from core.constants.path import assets_path, webui_path
 from core.database.models import SenderInfo
 from core.logger import Logger
+from core.utils.random import Random
 from core.utils.socket import find_available_port, get_local_ip
 
 if (webui_path / "dist").exists():
@@ -35,7 +36,12 @@ web_port = Config("web_port", 6485, table_name="bot_web")
 avaliable_web_port = find_available_port(web_port)
 
 allow_origins = Config("allow_origins", default=[], secret=True, table_name="bot_web")
+
+
 jwt_secret = Config("jwt_secret", cfg_type=str, secret=True, table_name="bot_web")
+if not jwt_secret:
+    CFGManager.write("jwt_secret", Random.randbytes(32).hex(), secret=True, table_name="bot_web")
+    jwt_secret = Config("jwt_secret", cfg_type=str, secret=True, table_name="bot_web")
 
 
 def _webui_message():

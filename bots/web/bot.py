@@ -12,16 +12,11 @@ from core.builtins.bot import Bot
 from core.builtins.message.chain import MessageChain
 from core.builtins.session.info import SessionInfo
 from core.builtins.temp import Temp
-from core.config import Config, CFGManager
-from core.utils.random import Random
+from core.config import Config
 
 Bot.register_bot(client_name=client_name)
 
 ctx_id = Bot.register_context_manager(WebContextManager)
-
-
-if not Config("jwt_secret", cfg_type=str, secret=True, table_name="bot_web"):
-    CFGManager.write("jwt_secret", Random.randbytes(32).hex(), secret=True, table_name="bot_web")
 
 
 @app.websocket("/ws/chat")
