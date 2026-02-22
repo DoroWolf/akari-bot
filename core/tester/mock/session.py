@@ -96,7 +96,10 @@ class MockMessageSession(MessageSession):
             user_id = [user_id]
 
         for x in user_id:
-            self.action.append(f"(restrict {x}{f" ({duration}s)" if duration else ""}{f": {reason}" if reason else ""})")
+            self.action.append(
+                f"(restrict {x}{
+                    f" ({duration}s)" if duration else ""}{
+                    f": {reason}" if reason else ""})")
 
     async def unrestrict_member(self, user_id):
         if isinstance(user_id, str):

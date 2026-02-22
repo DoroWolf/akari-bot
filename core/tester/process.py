@@ -16,6 +16,7 @@ from core.tester.mock.random import Random
 from core.logger import Logger
 from .expectations import Expectation
 
+
 async def run_case_entry(entry: dict, is_ci: bool = False) -> list[dict]:
     try:
         await close_db()

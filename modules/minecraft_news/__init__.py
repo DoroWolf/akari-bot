@@ -56,7 +56,7 @@ feedback_news = module(
         return random_tags"""
 
 
-startup_mute = True # flag to prevent news spam on bot startup, will be set to False after the first run of the news check
+startup_mute = True  # flag to prevent news spam on bot startup, will be set to False after the first run of the news check
 
 
 @minecraft_news.schedule(

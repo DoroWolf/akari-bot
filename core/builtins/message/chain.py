@@ -213,7 +213,8 @@ class MessageChain:
 
         return value
 
-    def to_str(self, text_only=True, element_filter: tuple[MessageElement, ...] | None = None, connector: str = "\n") -> str:
+    def to_str(self, text_only=True,
+               element_filter: tuple[MessageElement, ...] | None = None, connector: str = "\n") -> str:
         """
         将消息链转换为字符串。
 

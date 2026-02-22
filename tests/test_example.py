@@ -1,5 +1,6 @@
 from core.tester import Tester, func_case, Contains, Match
 
+
 @func_case
 async def _(tester: Tester):
     """This is a test example"""
