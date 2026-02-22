@@ -161,5 +161,4 @@ async def on_raw_reaction_add(payload: discord.RawReactionActionEvent):
 
 
 if Config("enable", False, table_name="bot_discord"):
-    loop = asyncio.new_event_loop()
     discord_bot.run(dc_token)
