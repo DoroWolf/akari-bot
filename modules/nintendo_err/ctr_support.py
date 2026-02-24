@@ -552,7 +552,7 @@ def nim_handler(ret, description):
             ret.add_field(
                 ConsoleErrorField("HTTP状态码", message_str=f"{description + 100}")
             )
-        elif 100 <= description < 500:
+        elif description < 500:
             ret.add_field(
                 ConsoleErrorField(
                     "HTTP状态码",

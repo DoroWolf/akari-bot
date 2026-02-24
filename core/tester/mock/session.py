@@ -332,3 +332,6 @@ class MockMessageSession(MessageSession):
 
     async def call_onebot_api(self, api_name, **kwargs):
         pass
+
+    def __eq__(self, other):
+        return False

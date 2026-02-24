@@ -17,7 +17,7 @@ levels = {"EZ": 0, "HD": 1, "IN": 2, "AT": 3}
 def get_song_rank(song_score: int, song_fc: bool):
     if song_score == 1000000:
         return "Φ", "#FFD700"
-    if song_fc and song_score != 1000000:
+    if song_fc:
         return "V", "#1E90FF"
     if 960000 <= song_score <= 999999:
         return "V", "#FFFFFF"

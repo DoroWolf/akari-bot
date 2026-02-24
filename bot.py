@@ -336,7 +336,7 @@ if __name__ == "__main__":
     if sys.platform == "win32":
         import msvcrt
 
-        lock_file = open(lock_file_path, "w")
+        lock_file = open(lock_file_path, "w")  # noqa
         try:
             msvcrt.locking(lock_file.fileno(), msvcrt.LK_NBLCK, 1)
         except OSError:
@@ -345,7 +345,7 @@ if __name__ == "__main__":
     else:
         import fcntl
 
-        lock_file = open(lock_file_path, "w")
+        lock_file = open(lock_file_path, "w")  # noqa
         try:
             fcntl.flock(lock_file, fcntl.LOCK_EX | fcntl.LOCK_NB)
         except BlockingIOError:

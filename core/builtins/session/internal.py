@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import asyncio
-from datetime import datetime, UTC as datetimeUTC
+from datetime import datetime, UTC
 from decimal import Decimal, ROUND_HALF_UP
 from typing import Any, Coroutine, Match, TYPE_CHECKING
 
@@ -543,7 +543,7 @@ class MessageSession:
         :param timezone: 是否显示时区。（默认为True）
         :return: 格式化后的时间格式。
         """
-        dt = datetime.fromtimestamp(timestamp, datetimeUTC) + self.session_info.timezone_offset
+        dt = datetime.fromtimestamp(timestamp, UTC) + self.session_info.timezone_offset
         ftime_template = []
         if date:
             if iso:
@@ -564,7 +564,7 @@ class MessageSession:
             else:
                 ftime_template.append(f"(UTC{self.session_info._tz_offset})")
         return (
-            datetime.fromtimestamp(timestamp, datetimeUTC) + self.session_info.timezone_offset
+            datetime.fromtimestamp(timestamp, UTC) + self.session_info.timezone_offset
         ).strftime(" ".join(ftime_template))
 
     def format_num(
@@ -627,6 +627,14 @@ class MessageSession:
         用于将消息会话对象转换为哈希值。
         """
         return hash(self.session_info.session_id)
+
+    def __eq__(self, other):
+        """
+        比较两个消息会话对象是否相等。
+        """
+        if isinstance(other, MessageSession):
+            return self.session_info.session_id == other.session_info.session_id
+        return False
 
 
 @define

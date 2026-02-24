@@ -55,6 +55,7 @@ class JobQueueBase:
     queue_actions = {}
     report_targets = Config("report_targets", [])
     is_running = False
+    TASK_TIMEOUT_SECONDS = 7200
     pause_event = asyncio.Event()
     pause_event.set()
 
@@ -63,7 +64,7 @@ class JobQueueBase:
         if target_client:
             task_id = await JobQueuesTable.add_task(target_client, action, args)
         else:
-            Logger.warning(f"Cannot add job {action} due to target_client is None, perhaps a bug?")
+            Logger.warning(f"Cannot add job {action} due to target_client being None, perhaps a bug?")
             return None
         if wait:
             return await QueueTaskManager.add(task_id)
@@ -79,7 +80,7 @@ class JobQueueBase:
         bot: "Bot" = exports["Bot"]
         try:
             timestamp = tsk.timestamp
-            if time.time() - timestamp.timestamp() > 7200:
+            if time.time() - timestamp.timestamp() > cls.TASK_TIMEOUT_SECONDS:
                 Logger.warning(f"Task {tsk.task_id} timeout, skip.")
                 tsk_val = await cls.return_val(tsk, {}, status="timeout")
             elif tsk.action in cls.queue_actions:

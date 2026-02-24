@@ -115,7 +115,7 @@ async def on_message(message: discord.Message):
                 message.content = f"{command_prefix[0]}help"
         else:
             return
-    if mention_required and not at_message and isinstance(message.channel, discord.Channel):
+    if mention_required and not at_message and not isinstance(message.channel, discord.DMChannel):
         return
 
     msg_chain = await to_message_chain(message)

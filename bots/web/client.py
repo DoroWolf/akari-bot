@@ -33,7 +33,7 @@ protocol = "https" if enable_https else "http"
 web_host = Config("web_host", "127.0.0.1", table_name="bot_web")
 web_port = Config("web_port", 6485, table_name="bot_web")
 
-avaliable_web_port = find_available_port(web_port)
+available_web_port = find_available_port(web_port)
 
 allow_origins = Config("allow_origins", default=[], secret=True, table_name="bot_web")
 
@@ -47,11 +47,11 @@ if not jwt_secret:
 def _webui_message():
     if web_host == "0.0.0.0":  # skipcq
         local_ip = get_local_ip()
-        network_line = f"Network: {protocol}://{local_ip}:{avaliable_web_port}/webui\n" if local_ip else ""
+        network_line = f"Network: {protocol}://{local_ip}:{available_web_port}/webui\n" if local_ip else ""
         message = (
             f"\n---\n"
             f"Visit AkariBot WebUI:\n"
-            f"Local:   {protocol}://127.0.0.1:{avaliable_web_port}/webui\n"
+            f"Local:   {protocol}://127.0.0.1:{available_web_port}/webui\n"
             f"{network_line}"
             f"---\n"
         )
@@ -59,7 +59,7 @@ def _webui_message():
         message = (
             f"\n---\n"
             f"Visit AkariBot WebUI:\n"
-            f"{protocol}://{web_host}:{avaliable_web_port}/webui\n"
+            f"{protocol}://{web_host}:{available_web_port}/webui\n"
             f"---\n"
         )
 
@@ -73,7 +73,7 @@ async def lifespan(app: FastAPI):
     if dist_path.exists():
         Logger.info(_webui_message())
     yield
-    await asyncio.sleep(99999)  # 等待 server 清理进程
+    await asyncio.Event().wait()  # 等待 server 清理进程
 
 app = FastAPI(lifespan=lifespan)
 limiter = Limiter(key_func=get_remote_address)

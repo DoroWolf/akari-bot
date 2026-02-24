@@ -74,7 +74,7 @@ async def to_message_chain(event: nio.RoomMessageFormatted, reply_id: str = None
             # https://spec.matrix.org/v1.9/client-server-api/#fallbacks-for-rich-replies
             while text.startswith("> "):
                 text = "".join(text.splitlines(keepends=True)[1:])
-        return MessageChain.assign(Plain(re.sub(r"@(.*?)", rf"{sender_prefix}|\1", text.strip())))
+        return MessageChain.assign(Plain(re.sub(r"@([A-Za-z0-9_.-]+)", rf"{sender_prefix}|\1", text.strip())))
     if msgtype == "m.image":
         url = None
         if "url" in content:
@@ -129,13 +129,12 @@ async def on_message(room: nio.MatrixRoom, event: nio.RoomMessageFormatted):
         return
 
     at_message = False
-    if event.body.startswith(client.user_id):
+    if event.body.startswith(matrix_bot.user_id):
         at_message = True
-        event.body = event.body[len(client.user_id):].strip()
+        event.body = event.body[len(matrix_bot.user_id):].strip()
         if not event.body:
             event.body = f"{command_prefix[0]}help"
-    else:
-        return
+
     if mention_required and not at_message:
         return
 

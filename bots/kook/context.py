@@ -106,7 +106,7 @@ class KOOKContextManager(ContextManager):
                 Logger.info(f"[Bot] -> [{session_info.target_id}]: {x.text}")
                 msg_ids.append(str(send_["msg_id"]))
             if isinstance(x, ImageElement):
-                url = await bot.create_asset(open(await x.get(), "rb"))
+                url = await bot.create_asset(open(await x.get(), "rb"))  # noqa
                 if ctx:
                     send_ = await ctx.reply(
                         url,
@@ -120,7 +120,7 @@ class KOOKContextManager(ContextManager):
                 )
                 msg_ids.append(str(send_["msg_id"]))
             if isinstance(x, VoiceElement):
-                url = await bot.create_asset(open(x.path, "rb"))
+                url = await bot.create_asset(open(x.path, "rb"))  # noqa
                 if ctx:
                     send_ = await ctx.reply(
                         url,
