@@ -37,7 +37,7 @@ class All(Expectation):
         self.expects = expects
 
     async def match(self, result):
-        for e in self.expects:
+        for e in self.expects:  # skipcq
             if not await e.match(result):
                 return False
         return True
@@ -57,7 +57,7 @@ class Any(Expectation):
         self.expects = expects
 
     async def match(self, result):
-        for e in self.expects:
+        for e in self.expects:  # skipcq
             if await e.match(result):
                 return True
         return False

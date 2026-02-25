@@ -97,7 +97,7 @@ async def init_db(load_module_db: bool = True, db_models: list[str] | None = Non
 
 async def reload_db(db_models: list[str] | None = None):
     async with _reload_lock:
-        from core.queue.server import JobQueueServer  # noqa
+        from core.queue.server import JobQueueServer
 
         JobQueueServer.pause_event.clear()
         old_modules_db_list = Temp.data.get("modules_db_list", [])

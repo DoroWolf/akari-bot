@@ -1,7 +1,7 @@
-from core import check_python_version  # noqa
+from core import check_python_version
 check_python_version()  # noqa
 
-from core.constants import config_path, config_filename  # noqa
+from core.constants import config_path, config_filename  # skipcq
 if not (config_path / config_filename).exists():
     import core.scripts.config_generate  # noqa
 
@@ -86,17 +86,16 @@ processes: list[multiprocessing.Process] = []
 
 
 def pre_init():
-
-    from core.constants.path import cache_path  # noqa
+    from core.constants.path import cache_path
     if cache_path.exists():
         shutil.rmtree(cache_path)
     cache_path.mkdir(parents=True, exist_ok=True)
 
-    from core.config import Config  # noqa
-    from core.constants.default import base_superuser_default  # noqa
-    from core.constants.version import database_version  # noqa
-    from core.database.link import get_db_link  # noqa
-    from core.database.models import SenderInfo, DBVersion  # noqa
+    from core.config import Config
+    from core.constants.default import base_superuser_default
+    from core.constants.version import database_version
+    from core.database.link import get_db_link
+    from core.database.models import SenderInfo, DBVersion
 
     Logger.info(ascii_art)
     if Config("debug", False):
@@ -163,8 +162,8 @@ def multiprocess_run_until_complete(func):
 
 
 def go(bot_name: str, subprocess: bool = False, binary_mode: bool = False):
-    from core.constants import Info  # noqa
-    from core.logger import Logger  # noqa
+    from core.constants import Info
+    from core.logger import Logger
 
     Logger.info(f"[{bot_name}] Here we go!")
     Info.subprocess = subprocess
@@ -187,9 +186,9 @@ binary_mode = not sys.argv[0].endswith(".py")
 
 
 async def run_bot():
-    from dotenv import load_dotenv  # noqa
-    from core.config import CFGManager  # noqa
-    from core.server.run import run_async as server_run_async  # noqa
+    from dotenv import load_dotenv
+    from core.config import CFGManager
+    from core.server.run import run_async as server_run_async
 
     def restart_bot_process(bot_name: str):
         if (
@@ -336,7 +335,7 @@ if __name__ == "__main__":
     if sys.platform == "win32":
         import msvcrt
 
-        lock_file = open(lock_file_path, "w")  # noqa
+        lock_file = open(lock_file_path, "w")  # skipcq
         try:
             msvcrt.locking(lock_file.fileno(), msvcrt.LK_NBLCK, 1)
         except OSError:
@@ -345,7 +344,7 @@ if __name__ == "__main__":
     else:
         import fcntl
 
-        lock_file = open(lock_file_path, "w")  # noqa
+        lock_file = open(lock_file_path, "w")  # skipcq
         try:
             fcntl.flock(lock_file, fcntl.LOCK_EX | fcntl.LOCK_NB)
         except BlockingIOError:

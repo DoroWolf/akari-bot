@@ -72,7 +72,7 @@ class QQBotContextManager(ContextManager):
 
     @classmethod
     def add_context(cls, session_info: SessionInfo, context: BaseMessage):
-        from bots.qqbot.bot import client  # noqa
+        from bots.qqbot.bot import client
 
         context._api = ModdedBotAPI(http=client.http)
         cls.context[session_info.session_id] = context
@@ -340,7 +340,7 @@ class QQBotContextManager(ContextManager):
         # if session_info.session_id not in cls.context:
         #     raise ValueError("Session not found in context")
 
-        from bots.qqbot.bot import client  # noqa
+        from bots.qqbot.bot import client
 
         client.api = ModdedBotAPI(http=client.http)
         if session_info.target_from == target_guild_prefix:
@@ -378,7 +378,7 @@ class QQBotContextManager(ContextManager):
         if session_info.target_from == target_guild_prefix:
             emoji_type = 1 if int(qq_typing_emoji) < 9000 else 2
 
-            from bots.qqbot.bot import client  # noqa
+            from bots.qqbot.bot import client
             try:
                 await client.api.put_reaction(
                     channel_id=session_info.get_common_target_id(),
@@ -404,7 +404,7 @@ class QQBotContextManager(ContextManager):
         if session_info.target_from == target_guild_prefix:
             emoji_type = 1 if int(qq_typing_emoji) < 9000 else 2
 
-            from bots.qqbot.bot import client  # noqa
+            from bots.qqbot.bot import client
             try:
                 await client.api.delete_reaction(
                     channel_id=session_info.get_common_target_id(),
@@ -428,7 +428,7 @@ class QQBotContextManager(ContextManager):
             if session_info.target_from == target_guild_prefix:
                 emoji_type = 1 if int(qq_typing_emoji) < 9000 else 2
 
-                from bots.qqbot.bot import client  # noqa
+                from bots.qqbot.bot import client
 
                 await client.api.put_reaction(
                     channel_id=session_info.get_common_target_id(),
@@ -462,7 +462,7 @@ class QQBotContextManager(ContextManager):
         if session_info.target_from == target_guild_prefix:
             emoji_type = 1 if int(qq_limited_emoji) < 9000 else 2
 
-            from bots.qqbot.bot import client  # noqa
+            from bots.qqbot.bot import client
 
             await client.api.put_reaction(
                 channel_id=session_info.get_common_target_id(),

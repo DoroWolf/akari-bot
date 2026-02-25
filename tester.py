@@ -1,4 +1,4 @@
-from core import check_python_version  # noqa
+from core import check_python_version
 check_python_version()  # noqa
 
 import asyncio

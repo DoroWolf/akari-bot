@@ -12,5 +12,5 @@ def check_python_version():
                 major,
                 minor,
                 *python_version
-            )  # noqa
+            )  # skipcq
         )
