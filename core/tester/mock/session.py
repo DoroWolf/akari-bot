@@ -335,3 +335,5 @@ class MockMessageSession(MessageSession):
 
     def __eq__(self, other):
         return False
+
+    __hash__ = None

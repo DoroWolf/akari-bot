@@ -105,9 +105,8 @@ async def main():
                     failed += 1
             else:
                 if IS_CI:
-                    if IS_CI:
-                        Logger.error("RESULT: FAIL (expects manual review, unavailable in CI)")
-                        failed += 1
+                    Logger.error("RESULT: FAIL (expects manual review, unavailable in CI)")
+                    failed += 1
                 else:
                     try:
                         Logger.warning("REVIEW: Did the output meet expectations? [y/N]")
