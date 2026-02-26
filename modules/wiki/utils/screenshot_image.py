@@ -91,8 +91,8 @@ async def generate_screenshot_v1(
             open_file.write("<head>\n")
             for x in soup.find_all(rel="stylesheet"):
                 if x.has_attr("href"):
-                    get_herf = x.get("href")
-                    x.attrs["href"] = re.sub(";", "&", urljoin(link, get_herf))
+                    get_href = x.get("href")
+                    x.attrs["href"] = re.sub(";", "&", urljoin(link, get_href))
                 open_file.write(str(x))
 
             for x in soup.find_all():
@@ -135,7 +135,6 @@ async def generate_screenshot_v1(
                                     fl.append(f"{f}=\"{" ".join(x.attrs[f])}\"")
                             open_file.write(f"<main {" ".join(fl)}>")
                         open_file.write(str(find_diff))
-                        w = 2000
                 if not find_diff:
                     infoboxes = infobox_elements.copy()
                     find_infobox = None
@@ -168,7 +167,6 @@ async def generate_screenshot_v1(
                     open_file.write("<div class=\"mw-parser-output\">")
 
                     open_file.write(str(find_infobox))
-                    w = 500
                     open_file.write("</div>")
             else:
                 for x in soup.find_all("body"):
@@ -251,11 +249,6 @@ async def generate_screenshot_v1(
                 x.attrs["style"] = re.sub(
                     r"url\(/(.*)\)", "url(" + link + "\\1)", x.get("style")
                 )
-
-        for x in soup.find_all(class_="lazyload"):
-            if x.has_attr("class") and x.has_attr("data-src"):
-                x.attrs["class"] = "image"
-                x.attrs["src"] = x.attrs["data-src"]
 
         for x in soup.find_all(class_="lazyload"):
             if x.has_attr("class") and x.has_attr("data-src"):

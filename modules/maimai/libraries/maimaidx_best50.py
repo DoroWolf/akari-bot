@@ -9,7 +9,6 @@ from .maimaidx_mapping import (
     rate_mapping,
     combo_mapping,
     sync_mapping,
-    diff_list,
 )
 from .maimaidx_music import TotalList
 from .maimaidx_utils import compute_rating, calc_dxstar
@@ -23,7 +22,6 @@ class ChartInfo:
         song_id: str,
         diff: int,
         chart_type: str,
-        rating: int,
         achievement: float,
         dx_score: int,
         dx_score_max: int,
@@ -48,9 +46,6 @@ class ChartInfo:
         self.ds = ds
         self.level = level
 
-    def __str__(self):
-        return f"{self.title:<50} [{self.chart_type}]{self.ds}\t{diff_list[self.diff]}\t{self.rating}"
-
     def __eq__(self, other):
         return self.rating == other.rating
 
@@ -69,7 +64,6 @@ class ChartInfo:
             title=data["title"],
             diff=data["level_index"],
             ds=data["ds"],
-            rating=data["ra"],
             dx_score=data["dxScore"],
             dx_score_max=dx_score_max,
             combo=combo_mapping.get(data["fc"], ""),

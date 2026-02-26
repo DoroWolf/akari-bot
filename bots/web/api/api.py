@@ -229,7 +229,6 @@ async def edit_target_info(request: Request, target_id: str):
 
         target_info = await TargetInfo.get_by_target_id(target_id)
         body = await request.json()
-        blocked = body.get("blocked")
         muted = body.get("muted")
         locale = body.get("locale")
         blocked = body.get("blocked")

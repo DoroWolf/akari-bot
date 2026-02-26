@@ -210,9 +210,6 @@ class DrawLevelList:
 
                         text_width, text_height = get_text_size(self.goal, font)
 
-                        text_x = x_offset
-                        text_y = y_offset + (self.image_size - text_height) // 2
-
                         if self.goal in ["SSS", "SSS+"]:
                             char_sizes = [font.getbbox(c)[2] - font.getbbox(c)[0] for c in self.goal]
                             total_text_width = sum(char_sizes)
@@ -224,13 +221,9 @@ class DrawLevelList:
                                 draw.text((text_x, text_y), char, fill=text_color[i], font=font)
                                 text_x += char_width  # 更新x坐标，绘制下一个字母
                         else:
-                            draw.text(
-                                (x_offset + (self.image_size - text_width) // 2,
-                                 y_offset + (self.image_size - text_height) // 2),
-                                self.goal,
-                                fill=text_color,
-                                font=font
-                            )
+                            text_x = x_offset + (self.image_size - text_width) // 2
+                            text_y = y_offset + (self.image_size - text_height) // 2
+                            draw.text((text_x, text_y), self.goal, fill=text_color, font=font)
 
                 x_offset += self.image_size + self.spacing
 

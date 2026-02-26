@@ -10,7 +10,6 @@ from .chunithm_mapping import (
     chu_cover_path,
     score_to_rate,
     combo_mapping,
-    diff_list
 )
 from .chunithm_music import TotalList
 
@@ -39,9 +38,6 @@ class ChartInfo:
         self.ds = ds
         self.level = level
         self.rate = rate
-
-    def __str__(self):
-        return f"{self.title:<50} {self.ds}\t{diff_list[self.diff]}\t{self.ra}"
 
     def __eq__(self, other):
         return self.ra == other.ra
@@ -80,7 +76,7 @@ class BestList:
         self._size = size
 
     def push(self, chart: ChartInfo):
-        if len(self._data) >= self._size and chart < self._data[-1]:
+        if len(self._data) >= self._size and chart.ra < self._data[-1].ra:
             return
         self._data.append(chart)
         self._data.sort(reverse=True)
